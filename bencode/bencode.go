@@ -166,6 +166,30 @@ func writeDecimal(w *bufio.Writer, val int) (len int) {
 	}
 }
 
+func checkNum(data byte) bool {
+	return data >= '0' && data <= '9'
+}
+func readDecimal(r *bufio.Reader) (val int, len int) {
+	sign := 1
+	b, _ := r.ReadByte()
+	len++
+	if b == '-' {
+		sign = -1
+		b, _ = r.ReadByte()
+		len++
+	}
+	for {
+		if !checkNum(b) {
+			r.UnreadByte()
+			len--
+			return sign * val, len
+		}
+		val = val*10 + int(b-'0')
+		b, _ = r.ReadByte()
+		len++
+	}
+}
+
 // Int的编解码
 func EncodeInt(w io.Writer, val int) int {
 	bw := bufio.NewWriter(w)
@@ -192,7 +216,7 @@ func DecodeInt(r io.Reader) (val int, err error) {
 	if b != 'i' {
 		return val, ErrEpI
 	}
-	val, _ := readDecimal(br)
+	val, _ = readDecimal(br)
 	b, err = br.ReadByte()
 	if b != 'e' {
 		return val, ErrEpE
